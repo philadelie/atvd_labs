@@ -68,4 +68,25 @@ public class UniSiteTesting {
         searchField.sendKeys(Keys.ENTER);
         Assert.assertNotEquals(studentPage, foxDriver.getCurrentUrl());
     }
+
+    @Test
+    public void testSlider() {
+        WebElement prevButton = foxDriver.findElement(By.className("prev"));
+        WebElement nextButton = foxDriver.findElement(By.className("next"));
+        WebElement nextButtonByCSS = foxDriver.findElement(By.cssSelector("a.next"));
+        Assert.assertEquals(nextButton, nextButtonByCSS);
+
+        for(int i = 0; i < 20; i++) {
+            if(nextButton.getAttribute("class").contains("disabled")) {
+                prevButton.click();
+                Assert.assertTrue(prevButton.getAttribute("class").contains("disabled"));
+                Assert.assertFalse(nextButton.getAttribute("class").contains("disabled"));
+            }
+            else {
+                nextButton.click();
+                Assert.assertTrue(nextButton.getAttribute("class").contains("disabled"));
+                Assert.assertFalse(prevButton.getAttribute("class").contains("disabled"));
+            }
+        }
+    }
 }
