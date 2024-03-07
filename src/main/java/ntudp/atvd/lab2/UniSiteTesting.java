@@ -9,8 +9,7 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 
 import java.time.Duration;
 
-public class UniSiteTesting
-{
+public class UniSiteTesting {
     private WebDriver foxDriver;
     private final String url = "https://www.nmu.org.ua/ua/";
 
@@ -24,10 +23,14 @@ public class UniSiteTesting
     }
 
     @BeforeMethod
-    public void precondition() { foxDriver.get(url); }
+    public void precondition() {
+        foxDriver.get(url);
+    }
 
     @AfterClass(alwaysRun = true)
-    public void tearDown() { foxDriver.quit(); }
+    public void tearDown() {
+        foxDriver.quit();
+    }
 
     @Test
     public void testHeaderExists() {
@@ -41,5 +44,28 @@ public class UniSiteTesting
         Assert.assertNotNull(forStudentButton);
         forStudentButton.click();
         Assert.assertEquals(foxDriver.getCurrentUrl(), url);
+    }
+
+    @Test
+    public void testSearchField() {
+        String studentPage = url + "content/students/";
+        foxDriver.get(studentPage);
+
+        WebElement searchField = foxDriver.findElement(By.tagName("input"));
+        Assert.assertNotNull(searchField);
+
+        System.out.printf("\nAttribute name: %s", searchField.getAttribute("name"));
+        System.out.printf("\nAttribute id: %s", searchField.getAttribute("id"));
+        System.out.printf("\nAttribute type: %s", searchField.getAttribute("type"));
+        System.out.printf("\nAttribute value: %s", searchField.getAttribute("value"));
+        System.out.printf("\nPosition: %s", searchField.getLocation());
+        System.out.printf("\nSize: %s", searchField.getSize());
+
+        String inputValue = "I need info";
+        searchField.sendKeys(inputValue);
+        Assert.assertEquals(inputValue, searchField.getText());
+
+        searchField.sendKeys(Keys.ENTER);
+        Assert.assertNotEquals(studentPage, foxDriver.getCurrentUrl());
     }
 }
