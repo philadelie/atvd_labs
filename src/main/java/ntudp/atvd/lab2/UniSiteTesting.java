@@ -9,7 +9,7 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 
 import java.time.Duration;
 
-public class uniSiteTest
+public class UniSiteTesting
 {
     private WebDriver foxDriver;
     private final String url = "https://www.nmu.org.ua/ua/";
@@ -33,5 +33,13 @@ public class uniSiteTest
     public void testHeaderExists() {
         WebElement header = foxDriver.findElement(By.id("header"));
         Assert.assertNotNull(header);
+    }
+
+    @Test
+    public void testClickOnForStudent() {
+        WebElement forStudentButton = foxDriver.findElement(By.xpath("/html/body/center/div[4]/div/div[1]/ul/li[4]/a"));
+        Assert.assertNotNull(forStudentButton);
+        forStudentButton.click();
+        Assert.assertEquals(foxDriver.getCurrentUrl(), url);
     }
 }
