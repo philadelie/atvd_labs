@@ -63,4 +63,14 @@ public class OwnTesting {
         Assert.assertNotEquals(url, foxDriver.getCurrentUrl());
     }
 
+    @Test
+    public void testSliders() {
+        WebElement prevArrow = foxDriver.findElement(By.cssSelector("button.simple-slider__control:nth-child(2)"));
+        WebElement nextArrow = foxDriver.findElement(By.cssSelector("button.simple-slider__control:nth-child(3)"));
+        Assert.assertNotNull(prevArrow);
+        Assert.assertNotNull(nextArrow);
+
+        prevArrow.click();
+        nextArrow.click();
+    }
 }
