@@ -41,8 +41,9 @@ public class MyAPITesting {
         Map<String, String> body = Map.of(
                 "username", "admin",
                 "password", "password123");
-
-        Response response = RestAssured.given().body(body).post(AUTH);
+        Response response = RestAssured.given()
+                .body(body)
+                .post(AUTH);
         response.then().statusCode(HttpStatus.SC_OK);
         authToken = response.jsonPath().get("token");
         System.out.printf("\n%s\n", response.jsonPath().get().toString());
@@ -52,15 +53,9 @@ public class MyAPITesting {
     // POST
     @Test(dependsOnMethods = "verifyLogin")
     public void verifyCreateBooking() {
-        Map<String, ?> body = Map.of(
-                "firstname", FIRST_NAME,
-                "lastname", LAST_NAME,
-                "totalprice", Faker.instance().number().numberBetween(10, 10000),
-                "depositpaid", Faker.instance().bool().bool(),
-                "bookingdates", Map.of("checkin", "2024-07-01", "checkout", "2024-09-01"),
-                "additionalneeds", "Breakfast");
-
-        Response response = RestAssured.given().body(body).post(BOOKING);
+        Response response = RestAssured.given()
+                .body(generateBookingInfo())
+                .post(BOOKING);
         response.then().statusCode(HttpStatus.SC_OK);
         System.out.printf("\n%s\n", response.jsonPath().get().toString());
     }
@@ -69,32 +64,33 @@ public class MyAPITesting {
     @Test(dependsOnMethods = "verifyCreateBooking")
     public void verifyGetBooking() {
         Map<String, String> params = Map.of("fn", FIRST_NAME, "ln", LAST_NAME);
-        Response response = RestAssured.given().pathParams(params).get(BOOKING_FILTER);
+        Response response = RestAssured.given()
+                .pathParams(params)
+                .get(BOOKING_FILTER);
         response.then().statusCode(HttpStatus.SC_OK);
-        System.out.printf("\n%s\n", response.jsonPath().get().toString());
         ids = response.jsonPath().get("bookingid");
+        System.out.printf("\n%s\n", response.jsonPath().get().toString());
     }
 
     // PUT
     @Test(dependsOnMethods = "verifyCreateBooking", priority = 1)
     public void verifyUpdateBooking() {
-        Map<String, ?> changes = Map.of(
+        Response response = RestAssured.given()
+                .header("Cookie", "token=" + authToken)
+                .body(generateBookingInfo())
+                .pathParam("id", ids.get(0))
+                .put(BOOKING_ID);
+        response.then().statusCode(HttpStatus.SC_OK);
+        System.out.printf("\n%s\n", response.jsonPath().get().toString());
+    }
+
+    private Map<String, ?> generateBookingInfo() {
+        return  Map.of(
                 "firstname", FIRST_NAME,
                 "lastname", LAST_NAME,
                 "totalprice", Faker.instance().number().numberBetween(10, 10000),
                 "depositpaid", Faker.instance().bool().bool(),
                 "bookingdates", Map.of("checkin", "2024-07-01", "checkout", "2024-09-01"),
                 "additionalneeds", "Breakfast");
-
-        System.out.println(authToken);
-
-        Response response = RestAssured.given()
-                .header("Cookie", "token=" + authToken)
-                .body(changes)
-                .pathParam("id", ids.get(0))
-                .put(BOOKING_ID);
-
-        response.then().statusCode(HttpStatus.SC_OK);
-        System.out.printf("\n%s\n", response.jsonPath().get().toString());
     }
 }
