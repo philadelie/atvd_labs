@@ -8,13 +8,9 @@ import io.restassured.http.ContentType;
 import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.Matchers.equalTo;
 
 public class MyAPITesting {
     private final String BASE_URL = "https://restful-booker.herokuapp.com";
