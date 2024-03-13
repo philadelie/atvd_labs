@@ -11,18 +11,21 @@ import org.apache.http.HttpStatus;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.equalTo;
 
 public class MyAPITesting {
-    private final String BASE_URL = "https://petstore.swagger.io/v2";
-    private final String USER = "/user";
-    private final String USER_USERNAME = USER + "/{username}";
-    private final String USER_LOGIN = USER + "/login";
-    private final String USER_LOGOUT = USER + "/logout";
-    private String username = "AlinaNamestnykova";
-    private String firstName = "Alina";
+    private final String BASE_URL = "https://restful-booker.herokuapp.com";
+    private final String AUTH = "/auth";
+    private final String BOOKING = "/booking";
+    private final String BOOKING_FILTER = "/booking?firstname={fn}&lastname={ln}";
+    private final String BOOKING_ID = BOOKING + "/{id}";
+    private final String FIRST_NAME = "Alina";
+    private final String LAST_NAME = "Namestnykova";
+    private String authToken;
+    private ArrayList ids;
 
     @BeforeClass(alwaysRun = true)
     public void setUp() {
@@ -32,54 +35,66 @@ public class MyAPITesting {
         RestAssured.responseSpecification = new ResponseSpecBuilder().build();
     }
 
+    // POST
     @Test
     public void verifyLogin() {
-        Map<String, ?> body = Map.of(
-                "username", "AlinaNamestnykova",
-                "password", "122-20-2.14");
+        Map<String, String> body = Map.of(
+                "username", "admin",
+                "password", "password123");
 
-        Response response = RestAssured.given().body(body).get(USER_LOGIN);
+        Response response = RestAssured.given().body(body).post(AUTH);
+        response.then().statusCode(HttpStatus.SC_OK);
+        authToken = response.jsonPath().get("token");
         System.out.printf("\n%s\n", response.jsonPath().get().toString());
-
-        response.then().statusCode(HttpStatus.SC_OK); //check status code
-        String sessionId = response.jsonPath().get("message").toString().replaceAll("[^0-9]", "");
-        RestAssured.requestSpecification.sessionId(sessionId);
+        //RestAssured.requestSpecification.sessionId(response.jsonPath().get("token").toString());
     }
 
+    // POST
     @Test(dependsOnMethods = "verifyLogin")
-    public void verifyCreateUser() {
+    public void verifyCreateBooking() {
         Map<String, ?> body = Map.of(
-                "username", username,
-                "firstName", firstName,
-                "lastName", Faker.instance().gameOfThrones().character(),
-                "email", Faker.instance().internet().emailAddress(),
-                "password", Faker.instance().internet().password(),
-                "phone", Faker.instance().phoneNumber().phoneNumber(),
-                "userStatus", 1);
+                "firstname", FIRST_NAME,
+                "lastname", LAST_NAME,
+                "totalprice", Faker.instance().number().numberBetween(10, 10000),
+                "depositpaid", Faker.instance().bool().bool(),
+                "bookingdates", Map.of("checkin", "2024-07-01", "checkout", "2024-09-01"),
+                "additionalneeds", "Breakfast");
 
-        Response response = RestAssured.given().body(body).post(USER);
-        System.out.printf("\n%s\n", response.jsonPath().get().toString());
+        Response response = RestAssured.given().body(body).post(BOOKING);
         response.then().statusCode(HttpStatus.SC_OK);
+        System.out.printf("\n%s\n", response.jsonPath().get().toString());
     }
 
-    @Test(dependsOnMethods = "verifyCreateUser")
-    public void verifyGetUserInfo() {
-        Response response = RestAssured.given().pathParam("username", username).get(USER_USERNAME);
+    // GET
+    @Test(dependsOnMethods = "verifyCreateBooking")
+    public void verifyGetBooking() {
+        Map<String, String> params = Map.of("fn", FIRST_NAME, "ln", LAST_NAME);
+        Response response = RestAssured.given().pathParams(params).get(BOOKING_FILTER);
+        response.then().statusCode(HttpStatus.SC_OK);
         System.out.printf("\n%s\n", response.jsonPath().get().toString());
-        response.then().statusCode(HttpStatus.SC_OK).and().body("firstName", equalTo(firstName));
+        ids = response.jsonPath().get("bookingid");
     }
 
-    @Test(dependsOnMethods = "verifyGetUserInfo")
-    public void verifyDeleteUser() {
-        Response response = RestAssured.given().pathParam("username", username).delete(USER_USERNAME);
-        System.out.printf("\n%s\n", response.jsonPath().get().toString());
-        response.then().statusCode(HttpStatus.SC_OK);
-    }
+    // PUT
+    @Test(dependsOnMethods = "verifyCreateBooking", priority = 1)
+    public void verifyUpdateBooking() {
+        Map<String, ?> changes = Map.of(
+                "firstname", FIRST_NAME,
+                "lastname", LAST_NAME,
+                "totalprice", Faker.instance().number().numberBetween(10, 10000),
+                "depositpaid", Faker.instance().bool().bool(),
+                "bookingdates", Map.of("checkin", "2024-07-01", "checkout", "2024-09-01"),
+                "additionalneeds", "Breakfast");
 
-    @Test(dependsOnMethods = "verifyLogin", priority = 1)
-    public void verifyLogout() {
-        Response response = RestAssured.given().get(USER_LOGOUT);
-        System.out.printf("\n%s\n", response.jsonPath().get().toString());
+        System.out.println(authToken);
+
+        Response response = RestAssured.given()
+                .header("Cookie", "token=" + authToken)
+                .body(changes)
+                .pathParam("id", ids.get(0))
+                .put(BOOKING_ID);
+
         response.then().statusCode(HttpStatus.SC_OK);
+        System.out.printf("\n%s\n", response.jsonPath().get().toString());
     }
 }
